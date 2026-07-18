@@ -49,14 +49,21 @@ class ScriptGenerator {
             let decomp = UrlDecomposition(url)
             let path = decomp.pathPart.replacingOccurrences(of: "\"", with: "\\\"")
             let file = decomp.lastPart.replacingOccurrences(of: "\"", with: "\\\"")
-            
-            content.append(#"mv -f ""#.data(using: .ascii)!)
-            content.append(path.data(using: .utf8)!)
-            content.append(file.data(using: .utf8)!)
-            content.append(#"" ""#.data(using: .ascii)!)
-            content.append(path.data(using: .utf8)!)
-            content.append(file.precomposedStringWithCanonicalMapping.data(using: .utf8)!)
-            content.append("\"\n".data(using: .ascii)!)
+            let nfcFile = file.precomposedStringWithCanonicalMapping
+
+            // 이미 NFC(완성형)인 파일명은 건너뜀
+            // (Swift의 ==는 정규화 차이를 무시하므로 반드시 바이트 단위로 비교해야 함)
+            if Array(file.utf8) == Array(nfcFile.utf8) {
+                continue
+            }
+
+            // APFS/HFS+는 NFD/NFC 이름을 같은 파일로 취급하여
+            // mv가 "are identical" 오류로 실패하므로 임시 이름을 거쳐 두 단계로 변경
+            let src = "\(path)\(file)"
+            let tmp = "\(path)\(nfcFile).nfc_tmp_$$"
+            let dst = "\(path)\(nfcFile)"
+            content.append("mv -f \"\(src)\" \"\(tmp)\"\n".data(using: .utf8)!)
+            content.append("mv -f \"\(tmp)\" \"\(dst)\"\n".data(using: .utf8)!)
         }
         
         return content
