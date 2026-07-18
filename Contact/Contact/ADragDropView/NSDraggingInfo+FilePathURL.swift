@@ -11,23 +11,16 @@ import AppKit
 
 extension NSDraggingInfo {
     var filePathURLs: [URL] {
-        var filenames : [String]?
-        var urls: [URL] = []
-        
-        if #available(OSX 10.13, *) {
-            filenames = draggingPasteboard.propertyList(forType: NSPasteboard.PasteboardType("NSFilenamesPboardType")) as? [String]
-        } else {
-            // Fallback on earlier versions
-            filenames = draggingPasteboard.propertyList(forType: NSPasteboard.PasteboardType("NSFilenamesPboardType")) as? [String]
-        }
-        
-        if let filenames = filenames {
-            for filename in filenames {
-                urls.append(URL(fileURLWithPath: filename))
-            }
+        // 샌드박스 앱은 readObjects(forClasses:)로 URL을 읽어야
+        // 드래그된 파일에 대한 접근 권한(sandbox extension)이 부여된다.
+        // 구형 NSFilenamesPboardType(경로 문자열)으로 받으면 권한 없이
+        // 경로만 얻게 되어 파일 조작이 전부 실패한다.
+        if let urls = draggingPasteboard.readObjects(
+            forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]
+        ) as? [URL], !urls.isEmpty {
             return urls
         }
-        
         return []
     }
 }
