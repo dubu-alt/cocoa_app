@@ -6,6 +6,7 @@ import Foundation
 struct RenameResult {
     var renamed = 0
     var failed = 0
+    var errors: [String] = []
 }
 
 class NfcRenamer {
@@ -57,6 +58,7 @@ class NfcRenamer {
         } catch {
             NSLog("NFC rename failed (step 1) for \(url.path): \(error)")
             result.failed += 1
+            result.errors.append("[1단계] \(name): \(error.localizedDescription)")
             return
         }
 
@@ -67,6 +69,7 @@ class NfcRenamer {
             NSLog("NFC rename failed (step 2) for \(url.path): \(error)")
             try? fileManager.moveItem(at: tmpUrl, to: url)  // 원래 이름으로 복구
             result.failed += 1
+            result.errors.append("[2단계] \(name): \(error.localizedDescription)")
         }
     }
 }

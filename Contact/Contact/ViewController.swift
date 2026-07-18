@@ -69,6 +69,8 @@ class ViewController: NSViewController {
         let result = NfcRenamer().rename(urls)
         if result.failed > 0 {
             messageText.stringValue = "Renamed \(result.renamed), failed \(result.failed)"
+            let detail = result.errors.prefix(3).joined(separator: "\n\n")
+            AlertDialog(detail).showDialogModal()
         } else if result.renamed == 0 {
             messageText.stringValue = "Nothing to rename (already NFC)"
         } else {
