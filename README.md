@@ -1,0 +1,71 @@
+# cocoa_app
+
+macOS용 Cocoa 유틸리티 앱 모음입니다. 두 앱 모두 Swift로 작성되었으며, **Apple Silicon(arm64) + Intel(x86_64) 유니버설 바이너리**로 빌드됩니다.
+
+## 앱 소개
+
+### Contact (v2.1)
+
+한글 파일명의 **자소 분리(NFD)** 문제를 해결해주는 앱입니다.
+
+macOS에서 파일명을 저장할 때 한글이 자소 단위(ㅎㅏㄴㄱㅡㄹ)로 분리되는 NFD 방식이 사용되어, Windows나 다른 시스템으로 파일을 옮기면 파일명이 깨져 보이는 문제가 있습니다. Contact는 파일이나 폴더를 드래그 앤 드롭하면 파일명을 완성형(NFC)으로 변환하는 셸 스크립트를 생성해줍니다.
+
+**사용 방법**
+
+1. 앱을 실행하고 변환할 파일 또는 폴더를 창에 드래그 앤 드롭합니다 (열기 버튼으로 선택도 가능).
+2. 저장 위치를 지정하면 `mv` 명령 기반의 변환 스크립트(.sh)가 생성됩니다.
+3. 생성된 스크립트를 터미널에서 실행하면 파일명이 NFC로 일괄 변환됩니다.
+
+폴더를 드롭하면 하위 항목까지 재귀적으로 처리하며, `.DS_Store` 같은 숨김 파일과 `.app` 번들 내부는 제외됩니다.
+
+### HoursContentCopier (v1.5.2)
+
+[Hours](https://hourstimetracking.com) 타임트래킹 서비스의 기록을 가져와 클립보드로 복사해주는 앱입니다.
+
+**사용 방법**
+
+1. Hours 계정으로 로그인합니다.
+2. 날짜를 선택하면 해당 날짜의 타이머 기록을 API로 조회합니다.
+3. 후처리(post-processing) 명령을 지정해 원하는 형식으로 가공한 뒤 내용을 복사할 수 있습니다.
+
+## 요구 사항
+
+- macOS 11.0 (Big Sur) 이상
+- Apple Silicon 및 Intel Mac 모두 지원 (유니버설 바이너리)
+
+## 빌드 방법
+
+Xcode에서 각 프로젝트(`Contact/Contact.xcodeproj`, `HoursContentCopier/HoursContentCopier.xcodeproj`)를 열어 빌드(⌘B)하거나, 터미널에서:
+
+```bash
+# Contact
+cd Contact
+xcodebuild -scheme Contact -configuration Release build
+
+# HoursContentCopier
+cd HoursContentCopier
+xcodebuild -scheme HoursContentCopier -configuration Release build
+```
+
+빌드된 바이너리의 아키텍처는 아래 명령으로 확인할 수 있습니다. `arm64 x86_64`가 출력되면 유니버설 바이너리입니다.
+
+```bash
+lipo -archs Contact.app/Contents/MacOS/Contact
+```
+
+## 프로젝트 구조
+
+```
+cocoa_app/
+├── Contact/                  # 한글 파일명 NFC 변환 스크립트 생성기
+│   ├── Contact/              # 앱 소스 (드래그 앤 드롭, 스크립트 생성, 다이얼로그)
+│   ├── ContactTests/         # 단위 테스트
+│   └── ContactUITests/       # UI 테스트
+└── HoursContentCopier/       # Hours 기록 복사 도구
+    ├── HoursContentCopier/   # 앱 소스 (Hours API 연동, 후처리)
+    └── HoursContentCopierTests/  # 단위 테스트
+```
+
+## 라이선스
+
+[MIT License](LICENSE)
