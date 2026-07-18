@@ -136,3 +136,5 @@ iOSInjectionProject/
 
 # Release archives
 *.zip
+NFC변환테스트/
+자소분리테스트/

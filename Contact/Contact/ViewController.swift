@@ -66,14 +66,14 @@ class ViewController: NSViewController {
     
     func processing(_ urls: [URL]) {
         messageText.stringValue = ProcessingStatus.onProcessingMessage
-        let filename = generateTemporaryFilePath()
-        let scriptGen = ScriptGenerator(urls)
-        if (scriptGen.saveToFile(filename)) {
-            grantExecutable(filename)
-            executeShellScript(filename)
+        let result = NfcRenamer().rename(urls)
+        if result.failed > 0 {
+            messageText.stringValue = "Renamed \(result.renamed), failed \(result.failed)"
+        } else if result.renamed == 0 {
+            messageText.stringValue = "Nothing to rename (already NFC)"
+        } else {
+            messageText.stringValue = "Done! (\(result.renamed) renamed)"
         }
-        deleteFile(filename)
-        messageText.stringValue = ProcessingStatus.finishedMessage
     }
 
 }
