@@ -66,6 +66,13 @@ class ViewController: NSViewController {
     
     func processing(_ urls: [URL]) {
         messageText.stringValue = ProcessingStatus.onProcessingMessage
+        // 보안 범위(security-scoped) URL은 사용 전 접근 활성화가 필요함
+        let accessing = urls.map { $0.startAccessingSecurityScopedResource() }
+        defer {
+            for (index, url) in urls.enumerated() where accessing[index] {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
         let result = NfcRenamer().rename(urls)
         if result.failed > 0 {
             messageText.stringValue = "Renamed \(result.renamed), failed \(result.failed)"
