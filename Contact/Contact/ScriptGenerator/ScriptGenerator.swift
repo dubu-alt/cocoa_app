@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 /// 파일명을 NFC(완성형)로 직접 변환하는 클래스.
 /// 샌드박스 환경에서 외부 셸(/bin/sh)은 드래그로 받은 파일 접근 권한을
@@ -46,31 +47,46 @@ class NfcRenamer {
             return
         }
 
-        // APFS/HFS+는 NFD/NFC 이름을 같은 파일로 취급하므로
+        // 주의: FileManager.moveItem은 경로를 fileSystemRepresentation으로
+        // 변환하면서 파일명을 다시 NFD로 분해해버리므로 NFC 변환에 쓸 수 없다.
+        // POSIX rename() 시스템 호출로 UTF-8 바이트를 그대로 전달해야 한다.
+        //
+        // 또한 APFS/HFS+는 NFD/NFC 이름을 같은 파일로 취급하므로
         // 임시 이름을 거쳐 두 단계로 변경한다.
-        let dir = url.deletingLastPathComponent()
+        let dirPath = url.deletingLastPathComponent().path
         let tmpName = nfcName + ".nfctmp_" + String(UUID().uuidString.prefix(8))
-        let tmpUrl = dir.appendingPathComponent(tmpName)
-        let dstUrl = dir.appendingPathComponent(nfcName)
+        let srcPath = dirPath + "/" + name
+        let tmpPath = dirPath + "/" + tmpName
+        let dstPath = dirPath + "/" + nfcName
 
-        do {
-            try fileManager.moveItem(at: url, to: tmpUrl)
-        } catch {
-            NSLog("NFC rename failed (step 1) for \(url.path): \(error)")
+        var err = posixRename(from: srcPath, to: tmpPath)
+        if err != 0 {
+            NSLog("NFC rename failed (step 1) for \(srcPath): errno=\(err)")
             result.failed += 1
-            result.errors.append("[1단계] \(name): \(error.localizedDescription)")
+            result.errors.append("[1단계] \(name): \(String(cString: strerror(err)))")
             return
         }
 
-        do {
-            try fileManager.moveItem(at: tmpUrl, to: dstUrl)
+        err = posixRename(from: tmpPath, to: dstPath)
+        if err == 0 {
             result.renamed += 1
-        } catch {
-            NSLog("NFC rename failed (step 2) for \(url.path): \(error)")
-            try? fileManager.moveItem(at: tmpUrl, to: url)  // 원래 이름으로 복구
+        } else {
+            NSLog("NFC rename failed (step 2) for \(dstPath): errno=\(err)")
+            _ = posixRename(from: tmpPath, to: srcPath)  // 원래 이름으로 복구
             result.failed += 1
-            result.errors.append("[2단계] \(name): \(error.localizedDescription)")
+            result.errors.append("[2단계] \(name): \(String(cString: strerror(err)))")
         }
+    }
+
+    /// Foundation의 NFD 자동 변환을 우회하여 경로의 UTF-8 바이트를
+    /// 그대로 rename() 시스템 호출에 전달한다. 성공 시 0, 실패 시 errno 반환.
+    private func posixRename(from: String, to: String) -> Int32 {
+        let fromBytes: [CChar] = Array(from.utf8).map { CChar(bitPattern: $0) } + [0]
+        let toBytes: [CChar] = Array(to.utf8).map { CChar(bitPattern: $0) } + [0]
+        if Darwin.rename(fromBytes, toBytes) != 0 {
+            return errno
+        }
+        return 0
     }
 }
 
