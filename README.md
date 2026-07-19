@@ -9,6 +9,9 @@ macOS용 Cocoa 유틸리티 앱입니다. Swift로 작성되었으며, **Apple S
 한글 파일명의 **자소 분리(NFD)** 문제를 해결해주는 앱입니다.
 
 macOS에서 파일명을 저장할 때 한글이 자소 단위(ㅎㅏㄴㄱㅡㄹ)로 분리되는 NFD 방식이 사용되어, Windows나 다른 시스템으로 파일을 옮기면 파일명이 깨져 보이는 문제가 있습니다. Contact는 파일이나 폴더를 드래그 앤 드롭하면 파일명을 완성형(NFC)으로 즉시 변환해줍니다.
+<p align="center">
+    <img width="382" height="407" alt="자소분리 이미지" src="https://github.com/user-attachments/assets/15570339-2636-4565-813f-0bd770f50147" />
+</p>
 
 **사용 방법**
 
